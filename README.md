@@ -37,7 +37,7 @@ Team members share memory via a **namespace** — a scoping key in MemWal. Anyon
 ### Installation
 
 ```bash
-git clone https://github.com/<your-username>/mempod.git
+git clone https://github.com/oooo-o-pixel/mempod.git
 cd mempod
 npm install
 ```
