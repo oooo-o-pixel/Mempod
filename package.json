@@ -1,11 +1,14 @@
 {
-  "name": "session5_memwal",
+  "name": "mempod",
   "version": "1.0.0",
-  "description": "",
+  "description": "Shared team memory CLI assistant built on Walrus Memory (MemWal)",
   "main": "index.js",
   "type": "module",
+  "bin": {
+    "mempod": "./dist/index.js"
+  },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "tsc"
   },
   "keywords": [],
   "author": "",

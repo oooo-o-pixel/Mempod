@@ -11,6 +11,7 @@ Software teams constantly re-explain the same things to their AI assistants: "we
 MemPod's system prompt instructs the agent to:
 
 **Write a memory** when the conversation contains one of five fact types:
+
 1. A team decision (e.g. "we're using PostgreSQL instead of MongoDB")
 2. A rejected approach, with reasoning
 3. A coding convention or project rule
@@ -23,28 +24,18 @@ It avoids writing memories for greetings or vague statements, and checks for nea
 
 **Hold normal conversation** for greetings and small talk without forcing unnecessary tool calls, and can give grounded opinions on project decisions by recalling relevant context first — making it usable as a genuine day-to-day assistant, not just a lookup tool.
 
-## How Memory Is Shared
+## Quick Start (recommended — via npm)
 
-Team members share memory via a **namespace** — a scoping key in MemWal. Anyone using the same namespace string reads and writes to the same shared memory pool, simulating a team's collective knowledge. Different teams (or personal use) can use different namespace values to keep memory pools separate.
+MemPod is published on npm. No cloning required.
 
-## Setup
-
-### Prerequisites
-- Node.js 18+
-- An OpenAI API key
-- A Walrus Memory account (generate one at [memory.walrus.xyz](https://memory.walrus.xyz) for Mainnet, or [staging.memory.walrus.xyz](https://staging.memory.walrus.xyz) for testing)
-
-### Installation
+### 1. Create a project folder
 
 ```bash
-git clone https://github.com/<your-username>/mempod.git
-cd mempod
-npm install
+mkdir my-team-memory
+cd my-team-memory
 ```
 
-### Configuration
-
-Create a `.env` file in the project root:
+### 2. Create a `.env` file in that folder
 
 ```
 MEMWAL_PRIVATE_KEY=your-delegate-private-key
@@ -53,17 +44,44 @@ MEMWAL_SERVER_URL=https://relayer.memory.walrus.xyz
 OPENAI_API_KEY=your-openai-api-key
 ```
 
-Use `https://relayer-staging.memory.walrus.xyz` instead if you want to test on Testnet first.
+Get Walrus Memory credentials at [memory.walrus.xyz](https://memory.walrus.xyz) (Mainnet) or [staging.memory.walrus.xyz](https://staging.memory.walrus.xyz) (Testnet, for trying it out safely first — use `https://relayer-staging.memory.walrus.xyz` as `MEMWAL_SERVER_URL` if testing).
 
-### Run
+### 3. Run it
+
+```bash
+npx mempod
+```
+
+You'll be asked for your name, then can chat naturally. State decisions, ask about past decisions, and watch memories get written (📝) and recalled (🔎) in real time.
+
+To simulate a second teammate, open a separate terminal in the same folder and run `npx mempod` again with a different name — as long as both share the same namespace (see below), they'll share memory.
+
+### Optional: install globally
+
+```bash
+npm install -g mempod
+mempod
+```
+
+## Important: Namespace
+
+Team members share memory through a **namespace** — a scoping key in MemWal. Anyone using the same namespace string reads and writes to the same shared memory pool.
+
+The published package currently ships with a fixed default namespace for demonstration purposes. **If you're setting this up for your own team, clone the repo instead and change the `namespace` value in `index.ts` to something unique to your team** (e.g. `"your-team-name-2026"`), so you don't share memory with unrelated users of the package. A future version will let users set this via an environment variable or an interactive join/create prompt.
+
+## Using the Source Directly (for customizing namespace, prompt, or behavior)
+
+```bash
+git clone https://github.com/oooo-o-pixel/Mempod.git
+cd Mempod
+npm install
+```
+
+Edit the `namespace` value in `index.ts`, then:
 
 ```bash
 npx tsx index.ts
 ```
-
-You'll be asked for your name, then can chat naturally. State decisions, ask questions about past decisions, and watch memories get written (`📝`) and recalled (`🔎`) in real time.
-
-To open a second "teammate" session, run the same command in a separate terminal — as long as both use the same namespace (set in `index.ts`), they'll share memory.
 
 ## Verifying Memory on Walrus
 
@@ -75,9 +93,9 @@ https://walruscan.com/mainnet/blob/<blob-id>
 
 ## Known Limitations / Roadmap
 
-- Namespace membership is currently open — anyone with the namespace string can join. A production version would add Sui-based access control per team.
+- Namespace is currently hardcoded per deployment rather than user-selectable at runtime — a production version would let each team set or generate their own via an interactive prompt or environment variable.
+- Namespace membership is open — anyone with the namespace string can join. A production version would add Sui-based access control per team.
 - No file upload support — MemPod remembers conversational facts, not documents.
-- Built and tested as a CLI tool; not yet packaged for `npm install -g`.
 
 ## License
 
