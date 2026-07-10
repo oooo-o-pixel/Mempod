@@ -1,6 +1,6 @@
 {
   "name": "mempod",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Shared team memory CLI assistant built on Walrus Memory (MemWal)",
   "main": "index.js",
   "type": "module",
