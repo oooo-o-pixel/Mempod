@@ -7,11 +7,12 @@ import { z } from "zod";
 import readline from "readline/promises";
 import fs from "fs";
 const LOG_FILE = "./memory-log.jsonl";
+const NAMESPACE = process.env.MEMPOD_NAMESPACE || "project-team-demo";
 const memwal = MemWal.create({
     key: process.env.MEMWAL_PRIVATE_KEY,
     accountId: process.env.MEMWAL_ACCOUNT_ID,
     serverUrl: process.env.MEMWAL_SERVER_URL,
-    namespace: "project-team-demo", // MemPod's active namespace — rename per-team as needed
+    namespace: NAMESPACE, // set MEMPOD_NAMESPACE in .env to use your own team's namespace
 });
 async function withRetry(fn, retries = 2, delayMs = 2000) {
     try {
@@ -50,7 +51,16 @@ One clear, factual sentence per memory, readable standalone.
 Always call recall before answering questions about past decisions, conventions, or issues. Never say "I don't know" without recalling first.
 
 ## CRITICAL RULE
-If the user asks ANY question containing words like "what", "which", "who", "when", "how" about the project, team, decisions, tech stack, or status — you MUST call recall first, even if you think you already know the answer from earlier in this same conversation. Never answer from assumption or from your own guess. If recall returns nothing relevant, say clearly "I don't have that recorded yet" rather than giving a vague generic answer.
+If the user asks a FACTUAL question about the project, team, decisions, tech stack, or status (e.g. "what database are we using", "who decided X", "what's the status of Y") — you MUST call recall first, even if you think you already know the answer. Never answer a factual question from assumption or guess. If recall returns nothing relevant to a factual question, say clearly "I don't have that recorded yet."
+
+This rule applies to factual lookups only — it does NOT apply to opinion, discussion, or open-ended questions (see OPINIONS & DISCUSSION below), which should always get a real, engaged response.
+
+## OPINIONS & DISCUSSION
+When asked for your opinion, thoughts, or feedback on the project or a decision (e.g. "what do you think", "your take on this", "any concerns?"), always engage genuinely — never respond with "I don't have that recorded yet" to this kind of question:
+1. Call recall first to check what's already been decided, so your opinion is grounded in real context.
+2. Give a real, specific opinion — pros, cons, tradeoffs, or a genuine take — referencing relevant recalled facts by name where relevant (e.g. "since you're using FastAPI, I'd lean toward...").
+3. If recall returns little or nothing, it's fine to give a general take on the project concept itself rather than refusing to answer.
+4. It's fine to raise a concern if something recalled seems risky or inconsistent — flag it constructively.
 
 ## PLAIN CONVERSATION
 For greetings, small talk, or questions with no connection to the project, team, decisions, or status, respond directly and naturally without calling any tool.
@@ -109,7 +119,37 @@ async function main() {
 ╚══════════════════════════════════╝
 `);
     const speaker = await rl.question("Who are you (name)? ");
-    console.log(`\n${speaker} session started. Type a message (or 'exit'):`);
+    console.log(`\n${speaker} session started. Namespace: "${NAMESPACE}"\n`);
+    // Proactive session-start summary — recall key facts before the user asks anything
+    console.log("🔎 Checking team memory for context...");
+    try {
+        const summaryQueries = ["project", "decision", "issue"];
+        const seen = new Set();
+        const summaryFacts = [];
+        for (const q of summaryQueries) {
+            const result = await withRetry(() => memwal.recall(q));
+            for (const r of result.results) {
+                if (!seen.has(r.text)) {
+                    seen.add(r.text);
+                    summaryFacts.push(r.text);
+                }
+            }
+        }
+        if (summaryFacts.length > 0) {
+            console.log(`\nHere's what the team has shared so far:`);
+            for (const fact of summaryFacts.slice(0, 5)) {
+                console.log(`  • ${fact}`);
+            }
+            console.log("");
+        }
+        else {
+            console.log("No prior team memory found yet — starting fresh.\n");
+        }
+    }
+    catch (err) {
+        console.log("(Could not load session summary — continuing anyway.)\n");
+    }
+    console.log("Type a message (or 'exit'):");
     while (true) {
         const userInput = await rl.question(`[${speaker}] > `);
         if (userInput.trim().toLowerCase() === "exit")

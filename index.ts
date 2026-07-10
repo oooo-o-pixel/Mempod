@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 import "dotenv/config";
 import { MemWal } from "@mysten-incubation/memwal";
 import { generateText, tool, stepCountIs } from "ai";
