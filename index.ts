@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+
 import "dotenv/config";
 import { MemWal } from "@mysten-incubation/memwal";
 import { generateText, tool, stepCountIs } from "ai";
@@ -6,7 +7,11 @@ import { openai } from "@ai-sdk/openai";
 import { z } from "zod";
 import readline from "readline/promises";
 import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 const LOG_FILE = "./memory-log.jsonl";
 
 const NAMESPACE = process.env.MEMPOD_NAMESPACE || "project-team-demo";
@@ -40,42 +45,10 @@ function logMemory(entry: Record<string, unknown>) {
   fs.appendFileSync(LOG_FILE, line + "\n", "utf-8");
 }
 
-const SYSTEM_PROMPT = `You are a shared project memory assistant for a software team. Multiple teammates use you, and all of you read from and write to the same team memory.
-
-## WHEN TO WRITE (call remember)
-Write a memory when the conversation contains:
-1. A team decision (e.g. "we're using Postgres instead of MongoDB")
-2. A rejected approach and why
-3. A coding convention or project rule
-4. An open issue or blocker
-5. A resolution to a previously open issue
-
-Do not write near-duplicate memories — if recall shows the fact is already stored, don't write it again. If a new statement contradicts an existing stored decision, write the new fact clearly noting it supersedes or conflicts with the prior one.
-
-## WHAT TO WRITE
-One clear, factual sentence per memory, readable standalone.
-
-## WHEN TO RECALL
-Always call recall before answering questions about past decisions, conventions, or issues. Never say "I don't know" without recalling first.
-
-## CRITICAL RULE
-If the user asks a FACTUAL question about the project, team, decisions, tech stack, or status (e.g. "what database are we using", "who decided X", "what's the status of Y") — you MUST call recall first, even if you think you already know the answer. Never answer a factual question from assumption or guess. If recall returns nothing relevant to a factual question, say clearly "I don't have that recorded yet."
-
-This rule applies to factual lookups only — it does NOT apply to opinion, discussion, or open-ended questions (see OPINIONS & DISCUSSION below), which should always get a real, engaged response.
-
-## OPINIONS & DISCUSSION
-When asked for your opinion, thoughts, or feedback on the project or a decision (e.g. "what do you think", "your take on this", "any concerns?"), always engage genuinely — never respond with "I don't have that recorded yet" to this kind of question:
-1. Call recall first to check what's already been decided, so your opinion is grounded in real context.
-2. Give a real, specific opinion — pros, cons, tradeoffs, or a genuine take — referencing relevant recalled facts by name where relevant (e.g. "since you're using FastAPI, I'd lean toward...").
-3. If recall returns little or nothing, it's fine to give a general take on the project concept itself rather than refusing to answer.
-4. It's fine to raise a concern if something recalled seems risky or inconsistent — flag it constructively.
-
-## PLAIN CONVERSATION
-For greetings, small talk, or questions with no connection to the project, team, decisions, or status, respond directly and naturally without calling any tool.
-
-## BEHAVIOR
-- Be concise.
-- If recall returns conflicting facts, surface the conflict to the user rather than picking one silently.`;
+const SYSTEM_PROMPT = fs.readFileSync(
+  path.join(__dirname, "./submission_prompt/prompt.md"),
+  "utf-8",
+);
 
 const tools = {
   remember: tool({

@@ -1,6 +1,8 @@
 # MemPod — Shared Team Memory on Walrus
 
-MemPod is a CLI assistant that gives software teams persistent, shared memory across sessions, built on **Walrus Memory (MemWal)**. Instead of every teammate's AI conversations starting from zero, MemPod writes durable facts — decisions, rejected approaches, conventions, issues, and resolutions — to Walrus, and any teammate, in any separate session, can recall them accurately.
+MemPod is a CLI assistant that gives software teams persistent, shared memory across sessions, built on **Walrus Memory (MemWal)**. Instead of every teammate's AI conversations starting from zero, MemPod writes durable facts — decisions, rejected approaches, conventions, issues, ownership, and resolutions — to Walrus, and any teammate, in any separate session, can recall them accurately.
+
+> **Walrus Memory Prompt Jam (Session 5) submission:** this repo includes MemPod's exact system prompt as a standalone artifact — see [`submission_prompt/prompt.md`](./submission_prompt/prompt.md) and [`submission_prompt/SUBMISSION.md`](./submission_prompt/SUBMISSION.md) for the write-up and proof of usage.
 
 ## The Problem
 
@@ -10,17 +12,18 @@ Software teams constantly re-explain the same things to their AI assistants: "we
 
 MemPod's system prompt instructs the agent to:
 
-**Write a memory** when the conversation contains one of five fact types:
+**Write a memory** when the conversation contains one of six fact types:
 
 1. A team decision (e.g. "we're using PostgreSQL instead of MongoDB")
 2. A rejected approach, with reasoning
 3. A coding convention or project rule
 4. An open issue or blocker
 5. A resolution to a previously open issue
+6. An assignment of ownership, responsibility, or a deadline/scope change (e.g. "Osaz is handling auth")
 
-It avoids writing memories for greetings or vague statements, and checks for near-duplicates before writing.
+It avoids writing memories for greetings, vague statements, or unconfirmed proposals — a suggestion ("what if we used Redis?") is not written; only an actual commitment is. It checks for near-duplicates before writing, and if a new fact contradicts a stored one, it writes the update while explicitly noting the supersession rather than overwriting silently. Resolutions and rejected approaches are written to name the specific issue they refer to, so a memory never depends on unstated context from earlier in the conversation.
 
-**Recall memory** before answering any question about past decisions, conventions, or status — the agent is explicitly required to check memory first rather than guessing or claiming "I don't know" without having actually recalled. If two recalled facts conflict, it surfaces the conflict rather than silently picking one.
+**Recall memory** before answering any question about past decisions, conventions, ownership, or status — the agent is explicitly required to check memory first rather than guessing or claiming "I don't know" without having actually recalled. If recall returns nothing relevant, it says so plainly rather than inferring an answer from adjacent facts. If two recalled facts conflict, it surfaces the conflict rather than silently picking one.
 
 **Hold normal conversation** for greetings and small talk without forcing unnecessary tool calls, and can give grounded opinions on project decisions by recalling relevant context first — making it usable as a genuine day-to-day assistant, not just a lookup tool.
 
@@ -83,6 +86,8 @@ Edit the `namespace` value in `index.ts`, then:
 npx tsx index.ts
 ```
 
+The system prompt itself lives in [`submission_prompt/prompt.md`](./submission_prompt/prompt.md) and is loaded directly from that file at runtime — editing it there changes MemPod's live behavior, no need to touch `index.ts`.
+
 ## Verifying Memory on Walrus
 
 Every memory write returns a real blob ID. You can independently verify any blob at:
@@ -96,6 +101,7 @@ https://walruscan.com/mainnet/blob/<blob-id>
 - Namespace is currently hardcoded per deployment rather than user-selectable at runtime — a production version would let each team set or generate their own via an interactive prompt or environment variable.
 - Namespace membership is open — anyone with the namespace string can join. A production version would add Sui-based access control per team.
 - No file upload support — MemPod remembers conversational facts, not documents.
+- Memory currently only stores explicitly stated facts, not inferences drawn across multiple stored facts (e.g. it won't infer team size from the number of distinct names mentioned).
 
 ## License
 
